@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>DMARC Report Summary</h2>
+<p><strong>Organization:</strong> {{ report.org_name }} ({{ report.email }})</p>
+<p><strong>Report ID:</strong> {{ report.report_id }}</p>
+<p><strong>Date Range:</strong> {{ report.date_range }}</p>
+<p><strong>Domain:</strong> {{ report.domain }}</p>
+<p><strong>Published Policy:</strong> {{ report.policy }} (subdomain: {{ report.subdomain_policy }})</p>
+<p><strong>Total Emails in Report:</strong> {{ report.total_emails }}</p>
+
+<h4>Records (first 20)</h4>
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Source IP</th>
+            <th>Count</th>
+            <th>Disposition</th>
+            <th>DKIM</th>
+            <th>SPF</th>
+            <th>Header From</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rec in report.records[:20] %}
+        <tr>
+            <td>{{ rec.source_ip }}</td>
+            <td>{{ rec.count }}</td>
+            <td>{{ rec.disposition }}</td>
+            <td>{{ rec.dkim }}</td>
+            <td>{{ rec.spf }}</td>
+            <td>{{ rec.header_from }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
+{% endblock %}

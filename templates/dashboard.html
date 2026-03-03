@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 DMARC Monitoring Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Scans</h5>
+                <h2>{{ total_scans }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Legitimate</h5>
+                <h2>{{ legitimate_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Suspicious</h5>
+                <h2>{{ suspicious_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Spoofed</h5>
+                <h2>{{ spoofed_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Verdict Distribution</div>
+            <div class="card-body">
+                <canvas id="verdictChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Top 10 Suspicious Domains</div>
+            <div class="card-body">
+                <canvas id="domainsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Scans -->
+<div class="card mb-4">
+    <div class="card-header">Recent Email Scans</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>From Domain</th>
+                    <th>Verdict</th>
+                    <th>SPF</th>
+                    <th>DKIM</th>
+                    <th>DMARC</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scan in scans %}
+                <tr>
+                    <td>{{ scan.timestamp }}</td>
+                    <td>{{ scan.from_domain }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if scan.verdict=='Legitimate' else 'warning' if scan.verdict=='Suspicious' else 'danger' }}">
+                            {{ scan.verdict }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if scan.spf_pass %}
+                            <span class="text-success">✅ Pass</span>
+                        {% else %}
+                            <span class="text-danger">❌ Fail</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if scan.dkim_pass %}
+                            <span class="text-success">✅ Pass</span>
+                        {% else %}
+                            <span class="text-danger">❌ Fail</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ scan.dmarc_policy }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showDetails('{{ scan.details|escapejs }}')">View Details</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DMARC Reports Summary -->
+<div class="card">
+    <div class="card-header">DMARC Reports Summary</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Organization</th>
+                    <th>Domain</th>
+                    <th>Total Emails</th>
+                    <th>Pass Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rep in reports %}
+                <tr>
+                    <td>{{ rep.timestamp }}</td>
+                    <td>{{ rep.org_name }}</td>
+                    <td>{{ rep.domain }}</td>
+                    <td>{{ rep.total_emails }}</td>
+                    <td style="width: 200px;">
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: {{ rep.pass_rate|default(0) }}%">
+                                {{ rep.pass_rate|default(0) }}%
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Export Buttons -->
+<div class="mt-3 mb-3">
+    <a href="/export/csv" class="btn btn-success">📥 Export CSV</a>
+    <a href="/export/json" class="btn btn-info">📥 Export JSON</a>
+</div>
+
+<!-- Chart.js for visualizations -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Function to show details in a popup
+    function showDetails(details) {
+        try {
+            // Try to parse if it's a string representation of a dict
+            let detailsObj = JSON.parse(details.replace(/'/g, '"'));
+            alert(JSON.stringify(detailsObj, null, 2));
+        } catch (e) {
+            // If parsing fails, show as is
+            alert(details);
+        }
+    }
+
+    // Verdict Distribution Chart
+    const verdictCtx = document.getElementById('verdictChart').getContext('2d');
+    new Chart(verdictCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Legitimate', 'Suspicious', 'Spoofed'],
+            datasets: [{
+                data: [{{ legitimate_count }}, {{ suspicious_count }}, {{ spoofed_count }}],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Top Domains Chart
+    const domainsCtx = document.getElementById('domainsChart').getContext('2d');
+    new Chart(domainsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ top_domains|safe }},
+            datasets: [{
+                label: 'Suspicious/Spooled Emails',
+                data: {{ domain_counts|safe }},
+                backgroundColor: '#ffc107',
+                borderColor: '#e0a800',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
