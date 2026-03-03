@@ -1,3 +1,7 @@
 {
-    "kiroAgent.configureMCP": "Enabled"
+    "css.validate": false,
+    "html.validate.styles": false,
+    "[html]": {
+        "editor.suggest.insertMode": "replace"
+    }
 }

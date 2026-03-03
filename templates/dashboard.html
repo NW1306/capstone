@@ -130,7 +130,7 @@
                     <td>{{ rep.org_name }}</td>
                     <td>{{ rep.domain }}</td>
                     <td>{{ rep.total_emails }}</td>
-                    <td style="width: 200px;">
+                    <td style="width: 200px">
                         <div class="progress">
                             <div class="progress-bar bg-success" style="width: {{ rep.pass_rate|default(0) }}%">
                                 {{ rep.pass_rate|default(0) }}%
@@ -152,6 +152,15 @@
 
 <!-- Chart.js for visualizations -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="application/json" id="chartData">
+{
+    "legitimate_count": {{ legitimate_count }},
+    "suspicious_count": {{ suspicious_count }},
+    "spoofed_count": {{ spoofed_count }},
+    "top_domains": {{ top_domains|tojson }},
+    "domain_counts": {{ domain_counts|tojson }}
+}
+</script>
 <script>
     // Function to show details in a popup
     function showDetails(details) {
@@ -165,6 +174,9 @@
         }
     }
 
+    // Load chart data
+    const chartData = JSON.parse(document.getElementById('chartData').textContent);
+
     // Verdict Distribution Chart
     const verdictCtx = document.getElementById('verdictChart').getContext('2d');
     new Chart(verdictCtx, {
@@ -172,7 +184,7 @@
         data: {
             labels: ['Legitimate', 'Suspicious', 'Spoofed'],
             datasets: [{
-                data: [{{ legitimate_count }}, {{ suspicious_count }}, {{ spoofed_count }}],
+                data: [chartData.legitimate_count, chartData.suspicious_count, chartData.spoofed_count],
                 backgroundColor: ['#28a745', '#ffc107', '#dc3545']
             }]
         },
@@ -191,10 +203,10 @@
     new Chart(domainsCtx, {
         type: 'bar',
         data: {
-            labels: {{ top_domains|safe }},
+            labels: chartData.top_domains,
             datasets: [{
                 label: 'Suspicious/Spooled Emails',
-                data: {{ domain_counts|safe }},
+                data: chartData.domain_counts,
                 backgroundColor: '#ffc107',
                 borderColor: '#e0a800',
                 borderWidth: 1
