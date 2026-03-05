@@ -43,7 +43,7 @@ class MLSpamDetector:
         conn.close()
         
         if len(data) < 10:
-            print("⚠️ Not enough data for ML training")
+            print("Not enough data for ML training")
             return
         
         # Prepare training data
@@ -69,7 +69,7 @@ class MLSpamDetector:
         # Train model
         self.model = RandomForestClassifier(n_estimators=100)
         self.model.fit(X, y)
-        print(f"✅ ML Model trained on {len(X)} samples")
+        print(f"ML Model trained on {len(X)} samples")
         
         # Save model
         joblib.dump(self.model, 'ml_model.pkl')

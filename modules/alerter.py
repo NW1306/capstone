@@ -40,7 +40,7 @@ class AlertSystem:
         msg = MIMEMultipart()
         msg['From'] = self.smtp_user
         msg['To'] = self.alert_email
-        msg['Subject'] = f"🚨 DMARC Alert: Multiple Spoofed Emails Detected"
+        msg['Subject'] = f"DMARC Alert: Multiple Spoofed Emails Detected"
         
         body = f"""
         <h2>DMARC Security Alert</h2>
@@ -58,9 +58,9 @@ class AlertSystem:
             server.login(self.smtp_user, self.smtp_password)
             server.send_message(msg)
             server.quit()
-            print(f"✅ Alert sent for {domain}")
+            print(f"Alert sent for {domain}")
         except Exception as e:
-            print(f"❌ Failed to send alert: {e}")
+            print(f"Failed to send alert: {e}")
     
     def start_monitoring(self, interval=3600):
         """Start background monitoring thread"""
@@ -71,4 +71,4 @@ class AlertSystem:
         
         thread = threading.Thread(target=monitor, daemon=True)
         thread.start()
-        print("✅ Alert monitoring started")
+        print("Alert monitoring started")
