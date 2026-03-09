@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Domain DMARC Lookup</h2>
+<form method="post">
+    <div class="mb-3">
+        <label for="domain" class="form-label">Enter domain</label>
+        <input type="text" class="form-control" name="domain" id="domain" placeholder="example.com" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Lookup</button>
+</form>
+
+{% if dmarc_record is defined %}
+<hr>
+<h4>Results for {{ domain }}</h4>
+<table class="table">
+    <tr><th>SPF Record</th><td>{{ spf_record or 'Not found' }}</td></tr>
+    <tr><th>DMARC Record</th><td>{{ dmarc_record or 'Not found' }}</td></tr>
+    {% if dmarc_policy %}
+    <tr><th>Policy (p)</th><td>{{ dmarc_policy.get('p','none') }}</td></tr>
+    <tr><th>Subdomain Policy (sp)</th><td>{{ dmarc_policy.get('sp','none') }}</td></tr>
+    <tr><th>RUA</th><td>{{ dmarc_policy.get('rua','') }}</td></tr>
+    <tr><th>RUF</th><td>{{ dmarc_policy.get('ruf','') }}</td></tr>
+    <tr><th>Percentage (pct)</th><td>{{ dmarc_policy.get('pct','100') }}</td></tr>
+    {% endif %}
+</table>
+{% endif %}
+{% endblock %}
