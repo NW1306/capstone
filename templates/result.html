@@ -1,21 +1,102 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Analysis Result</h2>
-<table class="table table-bordered">
-    <tr><th>From Domain</th><td>{{ result.from_domain }}</td></tr>
-    <tr><th>Return-Path Domain</th><td>{{ result.return_path_domain }}</td></tr>
-    <tr><th>Sending IP</th><td>{{ result.sending_ip }}</td></tr>
-    <tr><th>SPF Record</th><td>{{ result.spf_record }}</td></tr>
-    <tr><th>SPF Pass</th><td>{{ result.spf_pass }}</td></tr>
-    <tr><th>DKIM Pass</th><td>{{ result.dkim_pass }} ({{ result.dkim_domain }})</td></tr>
-    <tr><th>DMARC Record</th><td>{{ result.dmarc_record }}</td></tr>
-    <tr><th>DMARC Policy</th><td>{{ result.dmarc_policy }}</td></tr>
-    <tr><th>SPF Aligned</th><td>{{ result.spf_aligned }}</td></tr>
-    <tr><th>DKIM Aligned</th><td>{{ result.dkim_aligned }}</td></tr>
-    <tr class="table-{{ 'success' if result.verdict=='Legitimate' else 'warning' if result.verdict=='Suspicious' else 'danger' }}">
-        <th>Verdict</th><td><strong>{{ result.verdict }}</strong></td>
+
+<h2>Email Authentication Analysis Result</h2>
+
+<!-- Email metadata (helps confirm which email was analyzed) -->
+<div class="alert alert-secondary mb-4">
+    <strong>Analyzed Email Information</strong><br>
+
+    {% if result.uploaded_filename %}
+        <b>Uploaded File:</b> {{ result.uploaded_filename }} <br>
+    {% endif %}
+
+    {% if result.subject %}
+        <b>Subject:</b> {{ result.subject }} <br>
+    {% endif %}
+
+    {% if result.from_header %}
+        <b>From Header:</b> {{ result.from_header }} <br>
+    {% endif %}
+</div>
+
+
+<table class="table table-bordered table-striped">
+
+    <tr>
+        <th>From Domain</th>
+        <td>{{ result.from_domain }}</td>
     </tr>
-    <tr><th>Reason</th><td>{{ result.reason }}</td></tr>
+
+    <tr>
+        <th>Return-Path Domain</th>
+        <td>{{ result.return_path_domain }}</td>
+    </tr>
+
+    <tr>
+        <th>Sending IP</th>
+        <td>{{ result.sending_ip }}</td>
+    </tr>
+
+    <tr>
+        <th>SPF Record</th>
+        <td>{{ result.spf_record }}</td>
+    </tr>
+
+    <tr>
+        <th>SPF Pass</th>
+        <td>{{ result.spf_pass }}</td>
+    </tr>
+
+    <tr>
+        <th>DKIM Pass</th>
+        <td>{{ result.dkim_pass }} {% if result.dkim_domain %}({{ result.dkim_domain }}){% endif %}</td>
+    </tr>
+
+    <tr>
+        <th>DMARC Record</th>
+        <td>{{ result.dmarc_record }}</td>
+    </tr>
+
+    <tr>
+        <th>DMARC Policy</th>
+        <td>{{ result.dmarc_policy }}</td>
+    </tr>
+
+    <tr>
+        <th>SPF Alignment</th>
+        <td>{{ result.spf_aligned }}</td>
+    </tr>
+
+    <tr>
+        <th>DKIM Alignment</th>
+        <td>{{ result.dkim_aligned }}</td>
+    </tr>
+
+    <tr class="table-{{ 'success' if result.verdict=='Legitimate' else 'warning' if result.verdict=='Suspicious' else 'danger' }}">
+        <th>Final Verdict</th>
+        <td><strong>{{ result.verdict }}</strong></td>
+    </tr>
+
+    <tr>
+        <th>Reason</th>
+        <td>{{ result.reason }}</td>
+    </tr>
+
 </table>
-<a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
+
+
+<!-- Explanation block (client understanding) -->
+<div class="alert alert-info mt-4">
+<strong>How this result was calculated:</strong><br>
+• The system extracts the sender domain, return-path domain, and sending IP from the email headers.<br>
+• SPF authentication checks whether the sending IP is authorized for the return-path domain.<br>
+• DKIM verification validates the digital signature of the email.<br>
+• DMARC policy determines how authentication failures should be treated.<br>
+• The final verdict is determined based on SPF/DKIM results and DMARC alignment rules.
+</div>
+
+
+<a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Analyze Another Email</a>
+
 {% endblock %}
