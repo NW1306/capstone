@@ -233,19 +233,11 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
-@app.route('/incidents')
+@app.route('/api/incidents')
 def incidents():
-    return jsonify([
-        {
-            "severity": "High",
-            "domain": "cosmetis.com",
-            "title": "DMARC failure detected",
-            "detected": "2026-03-21 17:30",
-            "status": "Open"
-        }
-    ])
+    return jsonify([])
 
-@app.route('/summary')
+@app.route('/api/stats/summary')
 def summary():
     return jsonify({
         "total_emails": 10,
@@ -253,19 +245,21 @@ def summary():
         "failed": 8
     })
 
-@app.route('/count')
-def count():
+
+@app.route('/api/incidents/count')
+def incident_count():
     return jsonify({
-        "total": 10
+        "count": 0
     })
 
-@app.route('/timeline')
+@app.route('/api/charts/timeline')
 def timeline():
     return jsonify([
         {"date": "2026-03-20", "count": 5},
         {"date": "2026-03-21", "count": 10}
     ])
-    
+ 
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """Analyze uploaded email file."""
