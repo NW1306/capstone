@@ -14,9 +14,15 @@ from modules import email_analyzer, report_parser
 from dotenv import load_dotenv
 from config import Config
 from flask import jsonify
-from models import Report
 from app import db
+from flask import Flask
+from models import db, Report, Incident
 
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "your_db_url"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
 load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
@@ -233,30 +239,32 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
-@app.route('/api/incidents')
-def incidents():
-    return jsonify([])
+from flask import jsonify, request
 
-@app.route('/api/stats/summary')
-def summary():
+@app.route("/api/stats/summary")
+def api_stats_summary():
     return jsonify({
-        "total_emails": 10,
-        "pass_rate": 20,
-        "failed": 8
+        "total_emails": 0,
+        "pass_rate": 0,
+        "failed": 0
     })
 
+@app.route("/api/incidents")
+def api_incidents():
+    return jsonify([])
 
-@app.route('/api/incidents/count')
-def incident_count():
+@app.route("/api/incidents/count")
+def api_incidents_count():
     return jsonify({
         "count": 0
     })
 
-@app.route('/api/charts/timeline')
-def timeline():
+@app.route("/api/charts/timeline")
+def api_charts_timeline():
+    days = request.args.get("days", default=30, type=int)
     return jsonify([
-        {"date": "2026-03-20", "count": 5},
-        {"date": "2026-03-21", "count": 10}
+        {"date": "2026-03-20", "count": 0},
+        {"date": "2026-03-21", "count": 0}
     ])
  
 
@@ -846,3 +854,4 @@ def risk_level(score):
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
+    print(app.url_map)
