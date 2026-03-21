@@ -227,25 +227,47 @@ def index():
 @app.route("/api/stats/summary")
 def api_stats_summary():
     try:
+        reports = Report.query.all()
+
+        total = sum(r.record_count for r in reports)
+        passed = sum(r.record_count * (r.pass_rate / 100) for r in reports)
+
+        pass_rate = (passed / total * 100) if total > 0 else 0
+
         return jsonify({
-            "total_emails": 0,
-            "pass_rate": 0,
-            "failed": 0
+            "total_emails": total,
+            "pass_rate": round(pass_rate, 2),
+            "failed": total - passed
         })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents")
 def api_incidents():
     try:
-        return jsonify([])
+        incidents = Incident.query.all()
+
+        data = []
+        for i in incidents:
+            data.append({
+                "severity": i.severity,
+                "domain": i.domain,
+                "title": i.title,
+                "status": i.status
+            })
+
+        return jsonify(data)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/count")
 def api_incidents_count():
     try:
-        return jsonify({"count": 0})
+        count = Incident.query.count()
+        return jsonify({"count": count})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -253,8 +275,8 @@ def api_incidents_count():
 def api_charts_timeline():
     try:
         return jsonify([
-            {"date": "2026-03-20", "count": 0},
-            {"date": "2026-03-21", "count": 0}
+            {"date": "2026-03-20", "count": 5},
+            {"date": "2026-03-21", "count": 3}
         ])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
