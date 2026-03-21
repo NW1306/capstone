@@ -17,6 +17,8 @@ from flask import jsonify
 from app import db
 from flask import Flask
 from models import db, Report, Incident
+from flask import jsonify, request
+
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "your_db_url"
@@ -239,7 +241,6 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
-from flask import jsonify, request
 
 @app.route("/api/stats/summary")
 def api_stats_summary():
@@ -266,7 +267,6 @@ def api_charts_timeline():
         {"date": "2026-03-20", "count": 0},
         {"date": "2026-03-21", "count": 0}
     ])
- 
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
