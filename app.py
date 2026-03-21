@@ -14,7 +14,6 @@ from modules import email_analyzer, report_parser
 from dotenv import load_dotenv
 from config import Config
 from flask import jsonify
-from app import db
 from flask import Flask
 from models import db, Report, Incident
 from flask import jsonify, request
@@ -25,6 +24,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
 load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
@@ -857,4 +857,3 @@ def risk_level(score):
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
     print(app.url_map)
-    
