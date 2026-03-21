@@ -224,10 +224,6 @@ def index():
         return f"Error loading template: {e}"
 
 
-@app.route("/")
-def home():
-    return "App is running"
-
 @app.route("/api/stats/summary")
 def api_stats_summary():
     try:
