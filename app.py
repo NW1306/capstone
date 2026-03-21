@@ -13,6 +13,9 @@ from werkzeug.utils import secure_filename
 from modules import email_analyzer, report_parser
 from dotenv import load_dotenv
 from config import Config
+from flask import jsonify
+from models import Report
+from app import db
 
 load_dotenv()
 
@@ -230,21 +233,39 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
-@app.route("/api/incidents/<int:incident_id>/ack", methods=["POST"])
-def ack_incident(incident_id):
-    db = get_db()
-    cur = db.cursor()
+@app.route('/incidents')
+def incidents():
+    return jsonify([
+        {
+            "severity": "High",
+            "domain": "cosmetis.com",
+            "title": "DMARC failure detected",
+            "detected": "2026-03-21 17:30",
+            "status": "Open"
+        }
+    ])
 
-    cur.execute(
-        "UPDATE incidents SET status='ack' WHERE id=%s",
-        (incident_id,)
-    )
+@app.route('/summary')
+def summary():
+    return jsonify({
+        "total_emails": 10,
+        "pass_rate": 20,
+        "failed": 8
+    })
 
-    db.commit()
-    cur.close()
+@app.route('/count')
+def count():
+    return jsonify({
+        "total": 10
+    })
 
-    return jsonify({"ok": True})
-
+@app.route('/timeline')
+def timeline():
+    return jsonify([
+        {"date": "2026-03-20", "count": 5},
+        {"date": "2026-03-21", "count": 10}
+    ])
+    
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """Analyze uploaded email file."""
@@ -377,6 +398,21 @@ def dashboard():
     except Exception as e:
         traceback.print_exc()
         return f"Dashboard error: {e}", 500
+
+@app.route('/api/recent-reports')
+def recent_reports():
+    reports = Report.query.order_by(Report.created_at.desc()).limit(10).all()
+
+    data = []
+    for r in reports:
+        data.append({
+            "domain": r.domain,
+            "date": r.created_at.strftime("%Y-%m-%d %H:%M"),
+            "records": r.record_count,
+            "pass_rate": r.pass_rate
+        })
+
+    return jsonify(data)
 
 # ==================== EXPORT ROUTES ====================
 
@@ -719,6 +755,10 @@ def dev_seed():
 
     return "Seeded demo data for scans + reports (+ incidents). Refresh /dashboard"
 
+@app.route("/")
+def home():
+    return "DMARC Backend is running"
+
 @app.route('/upload_report', methods=['POST'])
 def upload_report():
     """Upload and parse DMARC XML report."""
@@ -781,6 +821,10 @@ def upload_report():
         traceback.print_exc()
         flash(f"Error: {str(e)}")
         return redirect(url_for('index'))
+
+@app.route("/healthz")
+def health():
+    return "OK"
 
 def calculate_threat_score(verdict):
     verdict = verdict.lower()
