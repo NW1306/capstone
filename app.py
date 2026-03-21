@@ -1,55 +1,37 @@
 import os
+import logging
 import psycopg2
 import psycopg2.extras
-import traceback
-from flask import g
-import traceback
-import logging
-import csv
-import json
-import io
 from flask import Flask, render_template, request, redirect, url_for, flash, g, jsonify, send_file
 from werkzeug.utils import secure_filename
-from modules import email_analyzer, report_parser
 from dotenv import load_dotenv
 from config import Config
-from flask import jsonify
-from flask import Flask
 from models import db, Report, Incident
-from flask import jsonify, request
-
-
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db.init_app(app)
+from modules import email_analyzer, report_parser
 
 load_dotenv()
 
-logging.basicConfig(level=logging.DEBUG)
-
 app = Flask(__name__)
-
 app.config.from_object(Config)
-# Security
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
-# Upload configuration
-DATABASE_URL = os.environ.get("DATABASE_URL")
+db.init_app(app)
+
+logging.basicConfig(level=logging.DEBUG)
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-ALLOWED_EXTENSIONS = {'eml', 'txt', 'xml'}
+ALLOWED_EXTENSIONS = {"eml", "txt", "xml"}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Database setup
-
-DATABASE_URL = os.getenv("DATABASE_URL")
 print("USING DATABASE_URL:", DATABASE_URL)
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set. Check your .env file.")
