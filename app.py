@@ -21,7 +21,7 @@ from flask import jsonify, request
 
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "your_db_url"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
@@ -242,6 +242,10 @@ def index():
         return f"Error loading template: {e}"
 
 
+@app.route("/")
+def home():
+    return "App is running"
+
 @app.route("/api/stats/summary")
 def api_stats_summary():
     return jsonify({
@@ -256,9 +260,7 @@ def api_incidents():
 
 @app.route("/api/incidents/count")
 def api_incidents_count():
-    return jsonify({
-        "count": 0
-    })
+    return jsonify({"count": 0})
 
 @app.route("/api/charts/timeline")
 def api_charts_timeline():
@@ -855,3 +857,4 @@ def risk_level(score):
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
     print(app.url_map)
+    
