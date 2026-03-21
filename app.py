@@ -248,27 +248,38 @@ def home():
 
 @app.route("/api/stats/summary")
 def api_stats_summary():
-    return jsonify({
-        "total_emails": 0,
-        "pass_rate": 0,
-        "failed": 0
-    })
+    try:
+        return jsonify({
+            "total_emails": 0,
+            "pass_rate": 0,
+            "failed": 0
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents")
 def api_incidents():
-    return jsonify([])
+    try:
+        return jsonify([])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/count")
 def api_incidents_count():
-    return jsonify({"count": 0})
+    try:
+        return jsonify({"count": 0})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/charts/timeline")
 def api_charts_timeline():
-    days = request.args.get("days", default=30, type=int)
-    return jsonify([
-        {"date": "2026-03-20", "count": 0},
-        {"date": "2026-03-21", "count": 0}
-    ])
+    try:
+        return jsonify([
+            {"date": "2026-03-20", "count": 0},
+            {"date": "2026-03-21", "count": 0}
+        ])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
