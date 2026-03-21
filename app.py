@@ -25,6 +25,7 @@ app.config.from_object(Config)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
 
 # Upload configuration
+DATABASE_URL = os.environ.get("DATABASE_URL")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
