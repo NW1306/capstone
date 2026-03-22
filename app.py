@@ -20,6 +20,10 @@ from werkzeug.utils import secure_filename
 from config import Config
 from models import db, Report, Incident
 from modules import email_analyzer, report_parser
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+from collections import defaultdict
+
 
 # =========================================================
 # APP SETUP
@@ -334,6 +338,119 @@ def dashboard():
     except Exception as e:
         traceback.print_exc()
         return f"Dashboard error: {e}", 500
+
+
+# 1. Classification Chart
+@app.route("/api/chart/classification")
+def chart_classification():
+    query = text("""
+        SELECT classification, COUNT(*) AS total
+        FROM incidents
+        GROUP BY classification
+    """)
+    rows = db.session.execute(query).fetchall()
+
+    counts = {
+        "Legitimate": 0,
+        "Suspicious": 0,
+        "Spoofed": 0
+    }
+
+    for row in rows:
+        label = row[0] if row[0] else "Unknown"
+        if label in counts:
+            counts[label] = row[1]
+
+    return jsonify({
+        "labels": list(counts.keys()),
+        "values": list(counts.values())
+    })
+
+
+# 2. Incident Trend Chart
+@app.route("/api/chart/trends")
+def chart_trends():
+    query = text("""
+        SELECT DATE(created_at) AS day, COUNT(*) AS total
+        FROM incidents
+        GROUP BY DATE(created_at)
+        ORDER BY day ASC
+    """)
+    rows = db.session.execute(query).fetchall()
+
+    labels = [str(row[0]) for row in rows]
+    values = [row[1] for row in rows]
+
+    return jsonify({
+        "labels": labels,
+        "values": values
+    })
+
+
+# 3. Authentication Failures Chart
+@app.route("/api/chart/auth-failures")
+def chart_auth_failures():
+    query = text("""
+        SELECT
+            SUM(CASE WHEN LOWER(spf_result) = 'fail' THEN 1 ELSE 0 END) AS spf_fail,
+            SUM(CASE WHEN LOWER(dkim_result) = 'fail' THEN 1 ELSE 0 END) AS dkim_fail,
+            SUM(CASE WHEN LOWER(dmarc_result) = 'fail' THEN 1 ELSE 0 END) AS dmarc_fail
+        FROM incidents
+    """)
+    row = db.session.execute(query).fetchone()
+
+    return jsonify({
+        "labels": ["SPF Fail", "DKIM Fail", "DMARC Fail"],
+        "values": [
+            row[0] or 0,
+            row[1] or 0,
+            row[2] or 0
+        ]
+    })
+
+
+# 4. Top Sender Domains Chart
+@app.route("/api/chart/top-domains")
+def chart_top_domains():
+    query = text("""
+        SELECT sender_domain, COUNT(*) AS total
+        FROM incidents
+        WHERE sender_domain IS NOT NULL AND sender_domain <> ''
+        GROUP BY sender_domain
+        ORDER BY total DESC
+        LIMIT 7
+    """)
+    rows = db.session.execute(query).fetchall()
+
+    labels = [row[0] for row in rows]
+    values = [row[1] for row in rows]
+
+    return jsonify({
+        "labels": labels,
+        "values": values
+    })
+
+
+# 5. Top Source IPs Chart
+@app.route("/api/chart/top-ips")
+def chart_top_ips():
+    query = text("""
+        SELECT source_ip, COUNT(*) AS total
+        FROM incidents
+        WHERE source_ip IS NOT NULL AND source_ip <> ''
+        GROUP BY source_ip
+        ORDER BY total DESC
+        LIMIT 7
+    """)
+    rows = db.session.execute(query).fetchall()
+
+    labels = [row[0] for row in rows]
+    values = [row[1] for row in rows]
+
+    return jsonify({
+        "labels": labels,
+        "values": values
+    })
 
 
 @app.route("/domain", methods=["GET", "POST"])
