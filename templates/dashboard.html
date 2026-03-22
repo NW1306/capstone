@@ -547,11 +547,17 @@
 
             tbody.innerHTML = items.map(i => `
                 <tr>
-                <td>${i.severity}</td>
-                <td>${i.domain ?? "-"}</td>
-                <td>${i.title}</td>
-                <td>${i.timestamp}</td>
-                <td>${i.status}</td>
+                    <td>${i.severity}</td>
+                    <td>${i.domain ?? "-"}</td>
+                    <td>${i.source_ip ?? "-"}</td>
+                    <td>${i.message ?? i.title}</td>
+                    <td>${i.detected}</td>
+                    <td>
+                        ${i.status === "Resolved"
+                            ? '<span class="badge bg-success">Resolved</span>'
+                            : `<button class="btn btn-sm btn-warning" onclick="resolveIncident(${i.id})">Resolve</button>`
+                        }
+                    </td>
                 </tr>
             `).join("");
             }
@@ -566,6 +572,25 @@
             loadIncidentCount();
             // optional refresh every 10s
             setInterval(() => { loadIncidents(); loadIncidentCount(); }, 10000);
+        
+        async function resolveIncident(id) {
+            try {
+                const res = await fetch(`/api/incidents/${id}/resolve`, {
+                    method: "POST"
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    loadIncidents();
+                    loadIncidentCount();
+                } else {
+                    console.error("Resolve failed:", data.error);
+                }
+            } catch (error) {
+                console.error("Error resolving incident:", error);
+            }
+}
 </script>
    
 

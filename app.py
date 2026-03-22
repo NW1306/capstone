@@ -223,6 +223,35 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
+@app.route("/api/stats/timeline")
+def api_timeline():
+    reports = Report.query.all()
+
+    data = {}
+    for r in reports:
+        date = (r.timestamp.date() if r.timestamp else None)
+        if not date:
+            continue
+
+        if date not in data:
+            data[date] = {"passed": 0, "failed": 0}
+
+        if (r.pass_rate or 0) > 0:
+            data[date]["passed"] += r.total_emails or 0
+        else:
+            data[date]["failed"] += r.total_emails or 0
+
+    result = [
+        {
+            "date": str(d),
+            "passed": v["passed"],
+            "failed": v["failed"]
+        }
+        for d, v in sorted(data.items())
+    ]
+
+    return jsonify(result)
+
 @app.route("/api/stats/summary")
 def api_stats_summary():
     try:
@@ -249,6 +278,20 @@ def api_stats_summary():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/incidents/<int:id>/resolve", methods=["POST"])
+def resolve_incident(id):
+    try:
+        incident = Incident.query.get(id)
+        if not incident:
+            return jsonify({"error": "Incident not found"}), 404
+
+        incident.status = "Resolved"
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Incident resolved"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
 @app.route("/api/incidents")
 def api_incidents():
     try:
@@ -257,6 +300,7 @@ def api_incidents():
         data = []
         for i in incidents:
             data.append({
+                "id": i.id,
                 "severity": i.severity,
                 "domain": i.domain,
                 "source_ip": i.source_ip,
