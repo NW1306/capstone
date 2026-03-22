@@ -301,13 +301,13 @@ def api_incidents():
         for i in incidents:
             data.append({
                 "id": i.id,
-                "severity": i.severity,
+                "severity": (i.severity or "").capitalize(),
                 "domain": i.domain,
                 "source_ip": i.source_ip,
                 "title": i.title,
                 "message": i.message,
                 "detected": i.timestamp.strftime("%Y-%m-%d %H:%M") if i.timestamp else "N/A",
-                "status": i.status
+                "status": (i.status or "").capitalize()
             })
 
         return jsonify(data)

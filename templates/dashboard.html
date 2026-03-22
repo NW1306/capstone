@@ -99,9 +99,9 @@
                                     <tr>
                                         <th>Severity</th>
                                         <th>Domain</th>
-                                        <th>Source IP</th>
-                                        <th>Message</th>
+                                        <th>Title</th>
                                         <th>Detected</th>
+                                        <th>Status</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -548,12 +548,12 @@
             tbody.innerHTML = items.map(i => `
                 <tr>
                     <td>${i.severity}</td>
-                    <td>${i.domain ?? "-"}</td>
-                    <td>${i.source_ip ?? "-"}</td>
-                    <td>${i.message ?? i.title}</td>
-                    <td>${i.detected}</td>
+                    <td>${i.domain}</td>
+                    <td>${i.title}</td>
+                    <td>${i.detected ?? "N/A"}</td>
+                    <td>${i.status}</td>
                     <td>
-                        ${i.status === "Resolved"
+                        ${i.status && i.status.toLowerCase() === "resolved"
                             ? '<span class="badge bg-success">Resolved</span>'
                             : `<button class="btn btn-sm btn-warning" onclick="resolveIncident(${i.id})">Resolve</button>`
                         }
@@ -584,13 +584,11 @@
                 if (data.success) {
                     loadIncidents();
                     loadIncidentCount();
-                } else {
-                    console.error("Resolve failed:", data.error);
                 }
-            } catch (error) {
-                console.error("Error resolving incident:", error);
+            } catch (err) {
+                console.error(err);
             }
-}
+        }
 </script>
    
 
