@@ -319,7 +319,7 @@
                             <td>${alert.domain}</td>
                             <td>${alert.source_ip || 'Unknown'}</td>
                             <td>${alert.message}</td>
-                            <td>${new Date(alert.detected_at).toLocaleString()}</td>
+                            <td>${new Date(alert.timestamp).toLocaleString()}</td>
                             <td>
                                 <button class="btn btn-sm btn-success" onclick="resolveAlert(${alert.id})">
                                     <i class="bi bi-check"></i> Resolve

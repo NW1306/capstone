@@ -223,17 +223,28 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}"
 
-
 @app.route("/api/stats/summary")
 def api_stats_summary():
     try:
         reports = Report.query.all()
+        incidents = Incident.query.all()
+
+        total_reports = len(reports)
+        total_domains = len(set(r.domain for r in reports if r.domain))
         total_emails = sum((r.total_emails or 0) for r in reports)
+        active_alerts = sum(1 for i in incidents if (i.status or "").lower() == "open")
 
         return jsonify({
-            "total_emails": total_emails,
+            "domains": total_domains,
+            "reports": total_reports,
+            "emails": total_emails,
+            "active_alerts": active_alerts,
             "pass_rate": 0,
-            "failed": total_emails
+
+            "total_domains": total_domains,
+            "total_reports": total_reports,
+            "total_emails": total_emails,
+            "alerts": active_alerts
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -241,14 +252,16 @@ def api_stats_summary():
 @app.route("/api/incidents")
 def api_incidents():
     try:
-        incidents = Incident.query.all()
-        data = []
+        incidents = Incident.query.order_by(Incident.timestamp.desc()).all()
 
+        data = []
         for i in incidents:
             data.append({
                 "severity": i.severity,
                 "domain": i.domain,
+                "source_ip": i.source_ip,
                 "title": i.title,
+                "message": i.message,
                 "detected": i.timestamp.strftime("%Y-%m-%d %H:%M") if i.timestamp else "N/A",
                 "status": i.status
             })
@@ -260,10 +273,11 @@ def api_incidents():
 @app.route("/api/incidents/count")
 def api_incidents_count():
     try:
-        return jsonify({"count": Incident.query.count()})
+        count = Incident.query.filter(Incident.status.ilike("Open")).count()
+        return jsonify({"count": count})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-        
+
 @app.route("/api/charts/timeline")
 def api_charts_timeline():
     try:
@@ -409,13 +423,13 @@ def dashboard():
 
 @app.route('/api/recent-reports')
 def recent_reports():
-    reports = Report.query.order_by(Report.created_at.desc()).limit(10).all()
+    reports = Report.query.order_by(Report.timestamp.desc()).limit(10).all()
 
     data = []
     for r in reports:
         data.append({
             "domain": r.domain,
-            "date": r.created_at.strftime("%Y-%m-%d %H:%M"),
+            "date": r.timestamp.strftime("%Y-%m-%d %H:%M"),
             "records": r.total_emails,
             "pass_rate": r.pass_rate
         })
@@ -566,19 +580,21 @@ def api_reports():
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 5, type=int)
 
-        pagination = Report.query.paginate(page=page, per_page=per_page, error_out=False)
+        pagination = Report.query.order_by(Report.timestamp.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
 
-        reports_data = []
+        rows = []
         for r in pagination.items:
-            reports_data.append({
+            rows.append({
                 "domain": r.domain,
                 "date": r.timestamp.strftime("%Y-%m-%d %H:%M") if r.timestamp else "N/A",
-                "records": r.total_emails,
+                "records": r.total_emails or 0,
                 "pass_rate": 0
             })
 
         return jsonify({
-            "reports": reports_data,
+            "reports": rows,
             "total": pagination.total,
             "pages": pagination.pages,
             "current_page": page
