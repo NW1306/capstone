@@ -479,26 +479,20 @@
                 const data = await response.json();
                 
                 if (data.reports && data.reports.length > 0) {
-                    document.getElementById('recent-reports-table').innerHTML = data.reports.map(report => `
-                        
-                        <tr>
-                            <td>${report.domain}</td>
-                            <td>${new Date(report.date_range_end).toLocaleDateString()}</td>
-                            <td>${report.total_records || 0}</td>
-                            <td>
-                                <th>
-                                Pass Rate 
-                                <i class="bi bi-info-circle"
-                                        data-bs-toggle="tooltip"
-                                        title="Pass Rate = (DMARC pass emails ÷ total emails) * 100. Emails failing DMARC lower the score.">
-                                    </i>
-                                    </th>
-                                <span class="${getPassRateClass(report.pass_rate)}">
-                                    ${report.pass_rate.toFixed(1)}%
-                                </span>
-                            </td>
-                        </tr>
-                    `).join('');
+                    document.getElementById('recent-reports-table').tbody.innerHTML = data.reports.map(report => `
+                    <tr>
+                        <td>${report.domain}</td>
+                        <td>${report.date !== "N/A" ? new Date(report.date).toLocaleDateString() : "N/A"}</td>
+                        <td>${report.records || 0}</td>
+                        <td>
+                            <span class="${getPassRateClass(report.pass_rate)}">
+                                ${report.pass_rate.toFixed(1)}%
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+
+
                 } else {
                     document.getElementById('recent-reports-table').innerHTML = `
                         <tr><td colspan="4" class="text-center">No recent reports</td></tr>
@@ -543,7 +537,7 @@
         async function loadIncidents() {
             const res = await fetch("/api/incidents");
             const items = await res.json();
-            updateIncidentBadge(data.incidents ? data.incidents.length : 0);
+            updateIncidentBadge(items.length);
 
             const tbody = document.getElementById("incidentsTable");
             if (!items.length) {
@@ -565,7 +559,7 @@
         async function loadIncidentCount() {
             const res = await fetch("/api/incidents/count");
             const data = await res.json();
-            document.getElementById("openIncidentsBadge").innerText = data.open;
+            document.getElementById("openIncidentsBadge").innerText = data.count;
             }
 
             loadIncidents();
