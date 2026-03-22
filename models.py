@@ -3,14 +3,22 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 class Report(db.Model):
+    __tablename__ = "reports"
+
     id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(255), nullable=False)
-    record_count = db.Column(db.Integer, default=0)
-    pass_rate = db.Column(db.Float, default=0)
+    timestamp = db.Column(db.DateTime)
+    org_name = db.Column(db.Text)
+    domain = db.Column(db.Text)
+    total_emails = db.Column(db.Integer)
 
 class Incident(db.Model):
+    __tablename__ = "incidents"
+
     id = db.Column(db.Integer, primary_key=True)
-    severity = db.Column(db.String(50))
-    domain = db.Column(db.String(255))
-    title = db.Column(db.String(255))
-    status = db.Column(db.String(50), default="Open")
+    timestamp = db.Column(db.DateTime)
+    severity = db.Column(db.Text)
+    domain = db.Column(db.Text)
+    source_ip = db.Column(db.Text)
+    title = db.Column(db.Text)
+    message = db.Column(db.Text)
+    status = db.Column(db.Text)

@@ -228,18 +228,13 @@ def index():
 def api_stats_summary():
     try:
         reports = Report.query.all()
-
-        total = sum(r.record_count for r in reports)
-        passed = sum(r.record_count * (r.pass_rate / 100) for r in reports)
-
-        pass_rate = (passed / total * 100) if total > 0 else 0
+        total_emails = sum((r.total_emails or 0) for r in reports)
 
         return jsonify({
-            "total_emails": total,
-            "pass_rate": round(pass_rate, 2),
-            "failed": total - passed
+            "total_emails": total_emails,
+            "pass_rate": 0,
+            "failed": total_emails
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -247,30 +242,28 @@ def api_stats_summary():
 def api_incidents():
     try:
         incidents = Incident.query.all()
-
         data = []
+
         for i in incidents:
             data.append({
                 "severity": i.severity,
                 "domain": i.domain,
                 "title": i.title,
+                "detected": i.timestamp.strftime("%Y-%m-%d %H:%M") if i.timestamp else "N/A",
                 "status": i.status
             })
 
         return jsonify(data)
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/count")
 def api_incidents_count():
     try:
-        count = Incident.query.count()
-        return jsonify({"count": count})
-
+        return jsonify({"count": Incident.query.count()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+        
 @app.route("/api/charts/timeline")
 def api_charts_timeline():
     try:
@@ -423,7 +416,7 @@ def recent_reports():
         data.append({
             "domain": r.domain,
             "date": r.created_at.strftime("%Y-%m-%d %H:%M"),
-            "records": r.record_count,
+            "records": r.total_emails,
             "pass_rate": r.pass_rate
         })
 
@@ -569,33 +562,29 @@ def api_stats():
 
 @app.route("/api/reports")
 def api_reports():
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 5))
-    offset = (page - 1) * per_page
+    try:
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 5, type=int)
 
-    db = get_db()
-    cur = db.cursor()
+        pagination = Report.query.paginate(page=page, per_page=per_page, error_out=False)
 
-    cur.execute("""
-        SELECT domain, timestamp, total_emails
-        FROM reports
-        ORDER BY timestamp DESC
-        LIMIT %s OFFSET %s
-    """, (per_page, offset))
+        reports_data = []
+        for r in pagination.items:
+            reports_data.append({
+                "domain": r.domain,
+                "date": r.timestamp.strftime("%Y-%m-%d %H:%M") if r.timestamp else "N/A",
+                "records": r.total_emails,
+                "pass_rate": 0
+            })
 
-    rows = cur.fetchall()
-    cur.close()
-
-    reports = []
-    for r in rows:
-        reports.append({
-            "domain": r["domain"],
-            "date_range_end": r["timestamp"],
-            "total_records": r["total_emails"],
-            "pass_rate": None
+        return jsonify({
+            "reports": reports_data,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": page
         })
-
-    return jsonify({"reports": reports})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/risky-domains")
 def api_risky_domains():
