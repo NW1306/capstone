@@ -8,7 +8,7 @@
             <div class="card-body">
                 <form action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <label for="email_file" class="form-label">Upload .eml or .txt file</label>
+                        <label for="email_file" class="form-label">Upload .eml or .txt email file</label>
                         <input class="form-control" type="file" name="email_file" id="email_file" accept=".eml,.txt">
                     </div>
                     <button type="submit" class="btn btn-primary">Analyze</button>
