@@ -1,5 +1,4 @@
-let timelineChart = null;
-let passRateChart = null;
+
 
 let isRefreshing = false;
 
@@ -180,27 +179,60 @@ async function loadAlerts() {
     }
 }
 
-async function loadTrendChart() {
-    const data = await fetchChartData('/api/charts/timeline?days=30');
+async function loadTimelineData() {
+    try {
+        const data = await fetchJson('/api/charts/timeline?days=30');
 
-    new Chart(document.getElementById('trendChart'), {
-        type: 'line',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'DMARC Reports Over Time',
-                data: data.values,
-                fill: false,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
-            }
+        const timelineEl = document.getElementById('timelineChart');
+        const passRateEl = document.getElementById('passRateChart');
+
+        if (!timelineEl || !passRateEl) return;
+
+        if (!data.labels || !data.values) {
+            console.error('Timeline API returned wrong format:', data);
+            return;
         }
-    });
+
+        Plotly.newPlot('timelineChart', [
+            {
+                x: data.labels,
+                y: data.values,
+                type: 'scatter',
+                mode: 'lines+markers',
+                fill: 'tozeroy',
+                name: 'DMARC Reports Over Time'
+            }
+        ], {
+            margin: { t: 40, r: 20, b: 50, l: 50 },
+            xaxis: { title: 'Date' },
+            yaxis: { title: 'Reports', rangemode: 'tozero' },
+            showlegend: true
+        }, {
+            responsive: true,
+            displayModeBar: false
+        });
+
+        const total = data.values.reduce((a, b) => a + b, 0);
+
+        Plotly.newPlot('passRateChart', [
+            {
+                values: [total],
+                labels: ['Total Reports'],
+                type: 'pie',
+                hole: 0.55,
+                textinfo: 'label+value'
+            }
+        ], {
+            margin: { t: 20, r: 20, b: 20, l: 20 },
+            showlegend: true
+        }, {
+            responsive: true,
+            displayModeBar: false
+        });
+
+    } catch (error) {
+        console.error('Error loading timeline data:', error);
+    }
 }
 
 async function loadRiskyDomains() {
