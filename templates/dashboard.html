@@ -16,40 +16,22 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
         .alert-critical { background-color: #dc3545; color: white; }
         .alert-high { background-color: #fd7e14; color: white; }
         .alert-medium { background-color: #ffc107; color: black; }
         .alert-low { background-color: #0dcaf0; color: black; }
-
         .pass-rate-good { color: #198754; }
         .pass-rate-warning { color: #ffc107; }
         .pass-rate-bad { color: #dc3545; }
-
         .loading-spinner {
             display: none;
             text-align: center;
             padding: 20px;
         }
-
-        .chart-card {
-            min-height: 380px;
-        }
-
-        .chart-card canvas,
-        #timelineChart,
-        #passRateChart,
-        #severityChart,
-        #trendChart,
-        #authFailureChart,
-        #domainChart,
-        #ipChart {
-            width: 100% !important;
-            max-height: 320px;
-        }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="navbar navbar-dark bg-dark">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">
@@ -65,20 +47,24 @@
     </nav>
 
     <div class="container-fluid mt-4">
+        <!-- Loading Spinner -->
         <div id="loading" class="loading-spinner">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
 
+        <!-- Summary Stats -->
         <div class="row" id="summary-stats">
+            <!-- Stats will be loaded here -->
         </div>
 
+        <!-- Charts Row -->
         <div class="row mb-4">
             <div class="col-md-8">
-                <div class="card chart-card">
+                <div class="card">
                     <div class="card-header">
-                        <i class="bi bi-graph-up"></i> Email Timeline
+                        <i class="bi bi-graph-up"></i> Email Timeline (Last 30 Days)
                     </div>
                     <div class="card-body">
                         <canvas id="timelineChart"></canvas>
@@ -86,7 +72,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card chart-card">
+                <div class="card">
                     <div class="card-header">
                         <i class="bi bi-pie-chart"></i> Overall Pass Rate
                     </div>
@@ -98,64 +84,48 @@
             </div>
         </div>
 
+        <!-- Alerts Section -->
         <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card chart-card">
+            <div class="col-12">
+                <div class="card">
                     <div class="card-header">
-                        <i class="bi bi-shield-exclamation"></i> Severity Overview
+                        <i class="bi bi-exclamation-triangle"></i> Active Spoofing Alerts
+                        <span class="badge bg-success ms-2" id="alert-count">0</span>
                     </div>
                     <div class="card-body">
-                        <canvas id="severityChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <i class="bi bi-activity"></i> Incident Trend
-                    </div>
-                    <div class="card-body">
-                        <canvas id="trendChart"></canvas>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Domain</th>
+                                        <th>Title</th>
+                                        <th>Detected</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alerts-table">
+                                    <tr><td colspan="6" class="text-center">Loading alerts...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <i class="bi bi-bar-chart"></i> Authentication Failures
-                    </div>
-                    <div class="card-body">
-                        <canvas id="authFailureChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <i class="bi bi-hdd-network"></i> Top Source IPs
-                    </div>
-                    <div class="card-body">
-                        <canvas id="ipChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="alert alert-info mb-3">
             <b>How Domain Scores Work</b><br>
             • Total Emails = number of DMARC reports analyzed.<br>
             • Pass Rate = percentage of emails that passed DMARC authentication.<br>
             • Lower pass rates indicate potential spoofing or misconfigured email security.
-        </div>
-
-        <div class="row mb-4">
+            </div>
+        <!-- Top Domains and Recent Reports -->
+        <div class="row">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <i class="bi bi-globe"></i> Top Domains by Volume
+                        <i class="bi bi-bar-chart"></i> Top Domains by Volume
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -165,21 +135,17 @@
                                         <th>Domain</th>
                                         <th>Email Count</th>
                                         <th>Pass Rate</th>
-                                        <th>Risk Score</th>
                                     </tr>
                                 </thead>
-                                <tbody id="risky-domains-table">
-                                    <tr><td colspan="4" class="text-center">Loading domains...</td></tr>
-                                </tbody>
+                                <<tbody id="risky-domains-table">
+                                    <tr><td colspan="4">Loading risky domains...</td></tr>
+                                    </tbody>
+                                
                             </table>
-                        </div>
-                        <div class="mt-3">
-                            <canvas id="domainChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -205,63 +171,512 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                Latest Incidents <span class="badge bg-success ms-2" id="incident-count">0</span>
-            </div>
-            <div class="card-body">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Severity</th>
-                            <th>Domain</th>
-                            <th>Title</th>
-                            <th>Detected</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="incidentsTable">
-                        <tr><td colspan="6">Loading incidents...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="card">
+        <div class="card-header">
+            Latest Incidents <span class="badge bg-success ms-2" id="incident-count">0</span>
         </div>
+        <div class="card-body">
+            <table class="table">
+            <thead>
+                <tr>
+                <th>Severity</th><th>Domain</th><th>Title</th><th>Detected</th><th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="incidentsTable">
+                <tr><td colspan="5">Loading incidents...</td></tr>
+            </tbody>
+            </table>
+        </div>
+        </div>
+    <script>
+        let timelineChart = null;
+        let passRateChart = null;
 
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-exclamation-triangle"></i> Active Spoofing Alerts
-                        <span class="badge bg-success ms-2" id="alert-count">0</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Severity</th>
-                                        <th>Domain</th>
-                                        <th>Source IP</th>
-                                        <th>Message</th>
-                                        <th>Detected</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="alerts-table">
-                                    <tr><td colspan="6" class="text-center">Loading alerts...</td></tr>
-                                </tbody>
-                            </table>
+        // Load all data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            ldocument.addEventListener('DOMContentLoaded', async () => {
+            try { await loadClassificationChart(); } catch (e) { console.error('classification failed', e); }
+            try { await loadTrendChart(); } catch (e) { console.error('trend failed', e); }
+            try { await loadAuthFailureChart(); } catch (e) { console.error('auth failures failed', e); }
+            try { await loadDomainChart(); } catch (e) { console.error('domain failed', e); }
+            try { await loadIpChart(); } catch (e) { console.error('ip failed', e); }
+        });
+            // Refresh every 60 seconds
+            setInterval(loadAllData, 60000);
+        });
+
+        function refreshData() {
+            showLoading();
+            loadAllData();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function loadAllData() {
+            Promise.all([
+                loadSummaryStats(),
+                loadAlerts(),
+                loadTimelineData(),
+                loadTopDomains(),
+                loadRecentReports()
+            ]).then(() => {
+                hideLoading();
+                document.getElementById('last-updated').innerHTML = 
+                    '<i class="bi bi-clock"></i> Updated: ' + new Date().toLocaleTimeString();
+            }).catch(error => {
+                console.error('Error loading data:', error);
+                hideLoading();
+            });
+        }
+
+        async function loadSummaryStats() {
+            try {
+                const response = await fetch('/api/stats/summary');
+                const data = await response.json();
+                
+                document.getElementById('summary-stats').innerHTML = `
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6><i class="bi bi-globe"></i> Domains</h6>
+                            <h2>${data.total_domains || 0}</h2>
                         </div>
                     </div>
-                </div>
-            </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6><i class="bi bi-file-text"></i> Reports</h6>
+                            <h2>${data.total_reports || 0}</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6><i class="bi bi-envelope"></i> Emails</h6>
+                            <h2>${data.total_emails || 0}</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6><i class="bi bi-exclamation-triangle"></i> Active Alerts</h6>
+                            <h2>${data.active_alerts || 0}</h2>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('alert-count').textContent = data.active_alerts || 0;
+                
+                // Update pass rate text in chart
+                document.getElementById('passRateText').innerHTML = `
+                    <h4 class="${getPassRateClass(data.pass_rate)}">${data.pass_rate}%</h4>
+                    <small>Pass Rate (30 days)</small>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading summary stats:', error);
+            }
+        }
+        function updateIncidentBadge(count) {
+            const badge = document.getElementById("incident-count");
+
+            badge.textContent = count;
+
+            badge.classList.remove("bg-success", "bg-warning", "bg-danger");
+
+            if (count === 0) {
+                badge.classList.add("bg-success");
+            } else if (count <= 5) {
+                badge.classList.add("bg-warning");
+            } else {
+                badge.classList.add("bg-danger");
+            }
+        }
+        function updateAlertBadge(count) {
+            const badge = document.getElementById("alert-count");
+
+            badge.textContent = count;
+
+            badge.classList.remove("bg-success", "bg-warning", "bg-danger");
+
+            if (count === 0) {
+                badge.classList.add("bg-success"); // green
+            } else if (count <= 5) {
+                badge.classList.add("bg-warning"); // yellow
+            } else {
+                badge.classList.add("bg-danger"); // red
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch('/api/alerts?resolved=false&limit=10');
+                const data = await response.json();
+                updateAlertBadge(data.alerts ? data.alerts.length : 0);
+                
+                if (data.alerts && data.alerts.length > 0) {
+                    document.getElementById('alerts-table').innerHTML = data.alerts.map(alert => `
+                        <tr class="alert-${alert.severity}">
+                            <td><span class="badge bg-${getSeverityBadge(alert.severity)}">${alert.severity}</span></td>
+                            <td>${alert.domain}</td>
+                            <td>${alert.source_ip || 'Unknown'}</td>
+                            <td>${alert.message}</td>
+                            <td>${new Date(alert.timestamp).toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success" onclick="resolveAlert(${alert.id})">
+                                    <i class="bi bi-check"></i> Resolve
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    document.getElementById('alerts-table').innerHTML = `
+                        <tr><td colspan="6" class="text-center text-success">
+                            <i class="bi bi-check-circle"></i> No active alerts
+                        </td></tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        async function loadTimelineData() {
+            try {
+                const response = await fetch('/api/charts/timeline?days=30');
+                const data = await response.json();
+                
+                // Update timeline chart
+                if (timelineChart) {
+                    timelineChart.destroy();
+                }
+                
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                timelineChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.dates || [],
+                        datasets: [
+                            {
+                                label: 'Failed',
+                                data: data.failed || [],
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Passed',
+                                data: data.passed || [],
+                                borderColor: '#198754',
+                                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Emails'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Update pass rate pie chart
+                const total = data.passed.reduce((a, b) => a + b, 0) + data.failed.reduce((a, b) => a + b, 0);
+                const passed = data.passed.reduce((a, b) => a + b, 0);
+                const failed = data.failed.reduce((a, b) => a + b, 0);
+                
+                if (passRateChart) {
+                    passRateChart.destroy();
+                }
+                
+                const pieCtx = document.getElementById('passRateChart').getContext('2d');
+                passRateChart = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Passed', 'Failed'],
+                        datasets: [{
+                            data: [passed, failed],
+                            backgroundColor: ['#198754', '#dc3545'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading timeline data:', error);
+            }
+        }
+
+        async function loadTopDomains() {
+            try {
+                const response = await fetch('/api/stats/summary');
+                const data = await response.json();
+                
+                if (data.top_domains && data.top_domains.length > 0) {
+                    document.getElementById('top-domains-table').innerHTML = data.top_domains.map(domain =>`
+                        <tr>
+                            <td>${domain.domain || 'Unknown'}</td>
+                            <td>${domain.count || 0}</td>
+                            <td><span class="badge bg-secondary"> N/A</span></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    document.getElementById('top-domains-table').innerHTML = `
+                        <tr><td colspan="3" class="text-center">No domain data available</td></tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading top domains:', error);
+            }
+        }
+        async function loadRiskyDomains() {
+            const res = await fetch("/api/risky-domains");
+            const data = await res.json();
+
+            const tbody = document.getElementById("risky-domains-table");
+            if (!data.domains || data.domains.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No data yet</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.domains.map(d => `
+                <tr>
+                <td>${d.domain}</td>
+                <td>${d.total}</td>
+                <td>${d.pass_rate}%</td>
+                <td><span class="badge ${d.risk_score >= 6 ? 'bg-danger' : d.risk_score >= 3 ? 'bg-warning' : 'bg-success'}">
+                    ${d.risk_score}
+                </span></td>
+                </tr>
+            `).join("");
+            }
+
+        loadRiskyDomains();
+
+        async function loadRecentReports() {
+            try {
+                const response = await fetch('/api/reports?page=1&per_page=5');
+                const data = await response.json();
+                
+                if (data.reports && data.reports.length > 0) {
+                    document.getElementById('recent-reports-table').tbody.innerHTML = data.reports.map(report => `
+                    <tr>
+                        <td>${report.domain}</td>
+                        <td>${report.date !== "N/A" ? new Date(report.date).toLocaleDateString() : "N/A"}</td>
+                        <td>${report.records || 0}</td>
+                        <td>
+                            <span class="${getPassRateClass(report.pass_rate)}">
+                                ${report.pass_rate.toFixed(1)}%
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+
+
+                } else {
+                    document.getElementById('recent-reports-table').innerHTML = `
+                        <tr><td colspan="4" class="text-center">No recent reports</td></tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading recent reports:', error);
+            }
+        }
+
+        async function resolveAlert(alertId) {
+            try {
+                const response = await fetch(`/api/alerts/${alertId}/resolve`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    refreshData();
+                }
+            } catch (error) {
+                console.error('Error resolving alert:', error);
+            }
+        }
+
+        function getSeverityBadge(severity) {
+            const badges = {
+                'critical': 'danger',
+                'high': 'warning',
+                'medium': 'info',
+                'low': 'secondary'
+            };
+            return badges[severity] || 'primary';
+        }
+
+        function getPassRateClass(rate) {
+            if (rate >= 95) return 'pass-rate-good';
+            if (rate >= 80) return 'pass-rate-warning';
+            return 'pass-rate-bad';
+        }
+        
+        async function loadIncidents() {
+            const res = await fetch("/api/incidents");
+            const items = await res.json();
+            updateIncidentBadge(items.length);
+
+            const tbody = document.getElementById("incidentsTable");
+            if (!items.length) {
+                tbody.innerHTML = `<tr><td colspan="5">No incidents</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(i => `
+                <tr>
+                    <td>${i.severity}</td>
+                    <td>${i.domain}</td>
+                    <td>${i.title}</td>
+                    <td>${i.detected ?? "N/A"}</td>
+                    <td>${i.status}</td>
+                    <td>
+                        ${i.status && i.status.toLowerCase() === "resolved"
+                            ? '<span class="badge bg-success">Resolved</span>'
+                            : `<button class="btn btn-sm btn-warning" onclick="resolveIncident(${i.id})">Resolve</button>`
+                        }
+                    </td>
+                </tr>
+            `).join("");
+            }
+
+        async function loadIncidentCount() {
+            const res = await fetch("/api/incidents/count");
+            const data = await res.json();
+            document.getElementById("openIncidentsBadge").innerText = data.count;
+            }
+
+            loadIncidents();
+            loadIncidentCount();
+            // optional refresh every 10s
+            setInterval(() => { loadIncidents(); loadIncidentCount(); }, 10000);
+        
+        async function resolveIncident(id) {
+            try {
+                const res = await fetch(`/api/incidents/${id}/resolve`, {
+                    method: "POST"
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    loadIncidents();
+                    loadIncidentCount();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+</script>
+   
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMARC Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .chart-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        canvas {
+            width: 100% !important;
+            max-height: 320px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DMARC Email Spoofing Detector Dashboard</h1>
+
+    <div class="dashboard-grid">
+        <div class="chart-card">
+            <h3>Severity Overview</h3>
+            <canvas id="severityChart"></canvas>
         </div>
 
+        <div class="chart-card">
+            <h3>Incident Trend</h3>
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Authentication Failures</h3>
+            <canvas id="authFailureChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Top Sender Domains</h3>
+            <canvas id="domainChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>Top Source IPs</h3>
+            <canvas id="ipChart"></canvas>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
