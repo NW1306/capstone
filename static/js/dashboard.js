@@ -172,11 +172,7 @@ async function loadAlerts() {
                 <td>${alert.source_ip || 'Unknown'}</td>
                 <td>${alert.message || 'No message'}</td>
                 <td>${alert.timestamp ? new Date(alert.timestamp).toLocaleString() : 'N/A'}</td>
-                <td>
-                    <button class="btn btn-sm btn-success" onclick="resolveAlert(${alert.id})">
-                        <i class="bi bi-check"></i> Resolve
-                    </button>
-                </td>
+                
             </tr>
         `).join('');
     } catch (error) {
