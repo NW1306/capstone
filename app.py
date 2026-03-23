@@ -341,12 +341,12 @@ def dashboard():
 
 
 # 1. Classification Chart
-@app.route("/api/chart/classification")
-def chart_classification():
+@app.route("/api/chart/severity")
+def chart_severity():
     query = text("""
-        SELECT classification, COUNT(*) AS total
+        SELECT severity, COUNT(*) AS total
         FROM incidents
-        GROUP BY classification
+        GROUP BY severity
     """)
     rows = db.session.execute(query).fetchall()
 
@@ -371,9 +371,9 @@ def chart_classification():
 @app.route("/api/chart/trends")
 def chart_trends():
     query = text("""
-        SELECT DATE(created_at) AS day, COUNT(*) AS total
+        SELECT DATE(timestamp) AS day, COUNT(*) AS total
         FROM incidents
-        GROUP BY DATE(created_at)
+        GROUP BY DATE(timestamp)
         ORDER BY day ASC
     """)
     rows = db.session.execute(query).fetchall()
@@ -390,68 +390,71 @@ def chart_trends():
 # 3. Authentication Failures Chart
 @app.route("/api/chart/auth-failures")
 def chart_auth_failures():
-    query = text("""
-        SELECT
-            SUM(CASE WHEN LOWER(spf_result) = 'fail' THEN 1 ELSE 0 END) AS spf_fail,
-            SUM(CASE WHEN LOWER(dkim_result) = 'fail' THEN 1 ELSE 0 END) AS dkim_fail,
-            SUM(CASE WHEN LOWER(dmarc_result) = 'fail' THEN 1 ELSE 0 END) AS dmarc_fail
-        FROM incidents
-    """)
-    row = db.session.execute(query).fetchone()
+    try:
+        query = text("""
+            SELECT
+                SUM(CASE WHEN LOWER(verdict) = 'fail' THEN 1 ELSE 0 END) AS fail_count,
+                SUM(CASE WHEN LOWER(verdict) = 'softfail' THEN 1 ELSE 0 END) AS softfail_count,
+                SUM(CASE WHEN LOWER(verdict) = 'none' THEN 1 ELSE 0 END) AS none_count
+            FROM scans
+        """)
+        row = db.session.execute(query).fetchone()
 
-    return jsonify({
-        "labels": ["SPF Fail", "DKIM Fail", "DMARC Fail"],
-        "values": [
-            row[0] or 0,
-            row[1] or 0,
-            row[2] or 0
-        ]
-    })
+        return jsonify({
+            "labels": ["Fail", "Softfail", "None"],
+            "values": [
+                row[0] or 0,
+                row[1] or 0,
+                row[2] or 0
+            ]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # 4. Top Sender Domains Chart
 @app.route("/api/chart/top-domains")
 def chart_top_domains():
-    query = text("""
-        SELECT sender_domain, COUNT(*) AS total
-        FROM incidents
-        WHERE sender_domain IS NOT NULL AND sender_domain <> ''
-        GROUP BY sender_domain
-        ORDER BY total DESC
-        LIMIT 7
-    """)
-    rows = db.session.execute(query).fetchall()
+    try:
+        query = text("""
+            SELECT domain, COUNT(*) AS total
+            FROM incidents
+            WHERE domain IS NOT NULL AND domain <> ''
+            GROUP BY domain
+            ORDER BY total DESC
+            LIMIT 7
+        """)
+        rows = db.session.execute(query).fetchall()
 
-    labels = [row[0] for row in rows]
-    values = [row[1] for row in rows]
-
-    return jsonify({
-        "labels": labels,
-        "values": values
-    })
+        return jsonify({
+            "labels": [row[0] for row in rows],
+            "values": [row[1] for row in rows]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # 5. Top Source IPs Chart
+
 @app.route("/api/chart/top-ips")
 def chart_top_ips():
-    query = text("""
-        SELECT source_ip, COUNT(*) AS total
-        FROM incidents
-        WHERE source_ip IS NOT NULL AND source_ip <> ''
-        GROUP BY source_ip
-        ORDER BY total DESC
-        LIMIT 7
-    """)
-    rows = db.session.execute(query).fetchall()
+    try:
+        query = text("""
+            SELECT source_ip, COUNT(*) AS total
+            FROM incidents
+            WHERE source_ip IS NOT NULL AND source_ip <> ''
+            GROUP BY source_ip
+            ORDER BY total DESC
+            LIMIT 7
+        """)
+        rows = db.session.execute(query).fetchall()
 
-    labels = [row[0] for row in rows]
-    values = [row[1] for row in rows]
-
-    return jsonify({
-        "labels": labels,
-        "values": values
-    })
-
+        return jsonify({
+            "labels": [row[0] for row in rows],
+            "values": [row[1] for row in rows]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/domain", methods=["GET", "POST"])
 def domain_lookup():
