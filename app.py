@@ -721,13 +721,12 @@ def chart_pass_rate():
 
         total = row["total"] or 0
         passed = row["passed"] or 0
-
-        pass_rate = round((passed * 100 / total), 2) if total else 0
+        failed = total - passed
 
         return jsonify({
-            "pass_rate": pass_rate,
             "passed": passed,
-            "failed": total - passed
+            "failed": failed,
+            "pass_rate": round((passed * 100 / total), 2) if total else 0
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

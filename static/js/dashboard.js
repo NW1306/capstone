@@ -181,57 +181,45 @@ async function loadAlerts() {
 
 async function loadTimelineData() {
     try {
-        const data = await fetchJson('/api/charts/timeline?days=30');
+        const res = await fetch('/api/charts/timeline?days=30');
+        const data = await res.json();
 
-        const timelineEl = document.getElementById('timelineChart');
-        const passRateEl = document.getElementById('passRateChart');
+        const dates = Array.isArray(data) ? data.map(d => d.date) : (data.labels || []);
+        const counts = Array.isArray(data) ? data.map(d => d.count) : (data.values || []);
 
-        if (!timelineEl || !passRateEl) return;
-
-        if (!data.labels || !data.values) {
-            console.error('Timeline API returned wrong format:', data);
-            return;
-        }
-
-        Plotly.newPlot('timelineChart', [
-            {
-                x: data.labels,
-                y: data.values,
-                type: 'scatter',
-                mode: 'lines+markers',
-                fill: 'tozeroy',
-                name: 'DMARC Reports Over Time'
-            }
-        ], {
-            margin: { t: 40, r: 20, b: 50, l: 50 },
-            xaxis: { title: 'Date' },
-            yaxis: { title: 'Reports', rangemode: 'tozero' },
-            showlegend: true
+        Plotly.newPlot('timelineChart', [{
+            x: dates,
+            y: counts,
+            type: 'scatter',
+            mode: 'lines+markers',
+            fill: 'tozeroy',
+            name: 'DMARC Reports Over Time'
+        }], {
+            margin: { t: 30, r: 20, b: 40, l: 40 }
         }, {
-            responsive: true,
-            displayModeBar: false
+            displayModeBar: false,
+            responsive: true
         });
 
-        const total = data.values.reduce((a, b) => a + b, 0);
+        const passRes = await fetch('/api/charts/pass-rate');
+        const passData = await passRes.json();
 
-        Plotly.newPlot('passRateChart', [
-            {
-                values: [total],
-                labels: ['Total Reports'],
-                type: 'pie',
-                hole: 0.55,
-                textinfo: 'label+value'
-            }
-        ], {
+        Plotly.newPlot('passRateChart', [{
+            values: [passData.passed || 0, passData.failed || 0],
+            labels: ['Passed', 'Failed'],
+            type: 'pie',
+            hole: 0.55,
+            textinfo: 'label+percent'
+        }], {
             margin: { t: 20, r: 20, b: 20, l: 20 },
             showlegend: true
         }, {
-            responsive: true,
-            displayModeBar: false
+            displayModeBar: false,
+            responsive: true
         });
 
-    } catch (error) {
-        console.error('Error loading timeline data:', error);
+    } catch (err) {
+        console.error('Plotly chart error:', err);
     }
 }
 
