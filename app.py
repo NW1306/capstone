@@ -810,25 +810,53 @@ def recent_reports():
 def api_reports():
     try:
         page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 5, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
+        offset = (page - 1) * per_page
 
-        pagination = Report.query.order_by(Report.timestamp.desc()).paginate(
-            page=page, per_page=per_page, error_out=False
-        )
+        total_row = execute_query("""
+            SELECT COUNT(*) AS count
+            FROM (
+                SELECT from_domain
+                FROM scans
+                WHERE from_domain IS NOT NULL AND TRIM(from_domain) != ''
+                GROUP BY from_domain
+            ) sub
+        """, fetchone=True)
 
-        rows = []
-        for r in pagination.items:
-            rows.append({
-                "domain": r.domain,
-                "date": r.timestamp.strftime("%Y-%m-%d %H:%M") if r.timestamp else "N/A",
-                "records": r.total_emails or 0,
-                "pass_rate": 0
+        rows = execute_query("""
+            SELECT
+                from_domain AS domain,
+                MAX(timestamp) AS latest_time,
+                COUNT(*) AS records,
+                ROUND(
+                    100.0 * SUM(
+                        CASE WHEN LOWER(verdict) IN ('pass', 'legitimate') THEN 1 ELSE 0 END
+                    ) / COUNT(*),
+                    2
+                ) AS pass_rate
+            FROM scans
+            WHERE from_domain IS NOT NULL AND TRIM(from_domain) != ''
+            GROUP BY from_domain
+            ORDER BY latest_time DESC
+            LIMIT %s OFFSET %s
+        """, (per_page, offset), fetchall=True)
+
+        data = []
+        for r in rows:
+            data.append({
+                "domain": r["domain"],
+                "date": r["latest_time"].strftime("%Y-%m-%d %H:%M") if r["latest_time"] else "N/A",
+                "records": r["records"] or 0,
+                "pass_rate": r["pass_rate"] or 0
             })
 
+        total = total_row["count"] if total_row else 0
+        pages = (total + per_page - 1) // per_page if per_page else 1
+
         return jsonify({
-            "reports": rows,
-            "total": pagination.total,
-            "pages": pagination.pages,
+            "reports": data,
+            "total": total,
+            "pages": pages,
             "current_page": page
         })
     except Exception as e:
