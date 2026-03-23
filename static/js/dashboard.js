@@ -1,12 +1,23 @@
 let timelineChart = null;
 let passRateChart = null;
 
+let isRefreshing = false;
+
 document.addEventListener('DOMContentLoaded', () => {
     showLoading();
     loadAllData();
-    setInterval(loadAllData, 60000);
-    setInterval(loadIncidents, 10000);
+    setInterval(refreshDashboardSafely, 10000);
 });
+
+async function refreshDashboardSafely() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    try {
+        await loadAllData();
+    } finally {
+        isRefreshing = false;
+    }
+}
 
 function refreshData() {
     showLoading();
