@@ -180,83 +180,27 @@ async function loadAlerts() {
     }
 }
 
-async function loadTimelineData() {
-    try {
-        const data = await fetchJson('/api/charts/timeline?days=30');
-        console.log("RAW API:", data);
+async function loadTrendChart() {
+    const data = await fetchChartData('/api/charts/timeline?days=30');
 
-        const canvas = document.getElementById('timelineChart');
-        const passRateCanvas = document.getElementById('passRateChart');
-
-        if (!canvas) {
-            console.error("timelineChart canvas not found");
-            return;
-        }
-
-        if (!Array.isArray(data) || data.length === 0) {
-            console.warn("No timeline data returned");
-            return;
-        }
-
-        const labels = data.map(d => d.date);
-        const values = data.map(d => Number(d.count || 0));
-
-        if (timelineChart) {
-            timelineChart.destroy();
-        }
-
-        timelineChart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'DMARC Activity',
-                    data: values,
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                scales: {
-                    y: { beginAtZero: true }
-                }
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'DMARC Reports Over Time',
+                data: data.values,
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
             }
-        });
-
-        if (passRateCanvas) {
-            if (passRateChart) {
-                passRateChart.destroy();
-            }
-
-            const total = values.reduce((a, b) => a + b, 0);
-
-            passRateChart = new Chart(passRateCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Total Reports'],
-                    datasets: [{
-                        data: [total],
-                        backgroundColor: ['#198754'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false
-                }
-            });
         }
-
-        console.log("CHART CREATED SUCCESSFULLY");
-    } catch (err) {
-        console.error("CHART ERROR:", err);
-    }
+    });
 }
 
 async function loadRiskyDomains() {

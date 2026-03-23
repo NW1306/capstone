@@ -709,6 +709,29 @@ def api_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/charts/pass-rate")
+def chart_pass_rate():
+    try:
+        row = execute_query("""
+            SELECT 
+                COUNT(*) AS total,
+                SUM(CASE WHEN LOWER(verdict) IN ('pass', 'legitimate') THEN 1 ELSE 0 END) AS passed
+            FROM scans
+        """, fetchone=True)
+
+        total = row["total"] or 0
+        passed = row["passed"] or 0
+
+        pass_rate = round((passed * 100 / total), 2) if total else 0
+
+        return jsonify({
+            "pass_rate": pass_rate,
+            "passed": passed,
+            "failed": total - passed
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/stats/summary")
 def api_stats_summary():
@@ -805,6 +828,28 @@ def recent_reports():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/charts/timeline")
+def chart_timeline():
+    try:
+        days = request.args.get("days", 30, type=int)
+
+        rows = execute_query("""
+            SELECT DATE(timestamp) AS date, COUNT(*) AS count
+            FROM scans
+            WHERE timestamp >= NOW() - INTERVAL '%s days'
+            GROUP BY DATE(timestamp)
+            ORDER BY DATE(timestamp)
+        """, (days,), fetchall=True)
+
+        labels = [str(r["date"]) for r in rows]
+        values = [r["count"] for r in rows]
+
+        return jsonify({
+            "labels": labels,
+            "values": values
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/reports")
 def api_reports():
