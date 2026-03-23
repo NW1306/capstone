@@ -187,77 +187,84 @@ async function loadAlerts() {
 async function loadTimelineData() {
     try {
         const data = await fetchJson('/api/charts/timeline?days=30');
-        const dates = data.dates || [];
-        const passed = data.passed || [];
-        const failed = data.failed || [];
+        console.log('timeline data:', data);
 
         const timelineCanvas = document.getElementById('timelineChart');
         const passRateCanvas = document.getElementById('passRateChart');
 
-        if (timelineCanvas) {
-            if (timelineChart) timelineChart.destroy();
-
-            timelineChart = new Chart(timelineCanvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [
-                        {
-                            label: 'Failed',
-                            data: failed,
-                            borderColor: '#dc3545',
-                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Passed',
-                            data: passed,
-                            borderColor: '#198754',
-                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Emails'
-                            }
-                        }
-                    }
-                }
-            });
+        if (!timelineCanvas) {
+            console.error('timelineChart canvas not found');
+            return;
         }
 
-        if (passRateCanvas) {
-            const totalPassed = passed.reduce((a, b) => a + b, 0);
-            const totalFailed = failed.reduce((a, b) => a + b, 0);
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn('No timeline data returned');
+            return;
+        }
 
-            if (passRateChart) passRateChart.destroy();
+        const labels = data.map(item => item.date);
+        const values = data.map(item => Number(item.count || 0));
+
+        if (timelineChart) {
+            timelineChart.destroy();
+        }
+
+        timelineChart = new Chart(timelineCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'DMARC Reports Over Time',
+                    data: values,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        if (passRateCanvas) {
+            if (passRateChart) {
+                passRateChart.destroy();
+            }
+
+            const total = values.reduce((a, b) => a + b, 0);
 
             passRateChart = new Chart(passRateCanvas.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Passed', 'Failed'],
+                    labels: ['Total Reports'],
                     datasets: [{
-                        data: [totalPassed, totalFailed],
-                        backgroundColor: ['#198754', '#dc3545'],
+                        data: [total],
+                        backgroundColor: ['#198754'],
                         borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: false,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
             });
