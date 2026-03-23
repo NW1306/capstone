@@ -147,7 +147,7 @@ function updateAlertBadge(count) {
 
 async function loadAlerts() {
     try {
-        const data = await fetchJson('/api/alerts?resolved=false&limit=10');
+        const data = await fetchJson('/api/alerts?resolved=false&limit=20');
         const alerts = data.alerts || [];
         updateAlertBadge(alerts.length);
 
@@ -295,7 +295,7 @@ async function loadRiskyDomains() {
 
 async function loadRecentReports() {
     try {
-        const data = await fetchJson('/api/reports?page=1&per_page=10');
+        const data = await fetchJson('/api/reports?page=1&per_page=20');
         const tbody = document.getElementById('recent-reports-table');
         if (!tbody) return;
 
@@ -325,30 +325,29 @@ async function loadRecentReports() {
 
 async function loadIncidents() {
     try {
-        const items = await fetchJson('/api/incidents');
-        const incidents = Array.isArray(items) ? items : [];
-        updateIncidentBadge(incidents.length);
+        const items = await fetchJson('/api/latest-scans');
+        const scans = Array.isArray(items) ? items : [];
+        updateIncidentBadge(scans.length);
 
         const tbody = document.getElementById('incidentsTable');
         if (!tbody) return;
 
-        if (incidents.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center">No incidents</td></tr>`;
+        if (scans.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center">No scans</td></tr>`;
             return;
         }
 
-        tbody.innerHTML = incidents.map(i => `
+        tbody.innerHTML = scans.map(i => `
             <tr>
                 <td>${i.severity || 'N/A'}</td>
                 <td>${i.domain || 'N/A'}</td>
                 <td>${i.title || 'N/A'}</td>
                 <td>${i.detected || 'N/A'}</td>
                 <td>${i.status || 'N/A'}</td>
-                
             </tr>
         `).join('');
     } catch (error) {
-        console.error('Error loading incidents:', error);
+        console.error('Error loading latest scans:', error);
     }
 }
 

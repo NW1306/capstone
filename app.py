@@ -876,7 +876,7 @@ def api_risky_domains():
                 SUM(CASE WHEN LOWER(verdict) IN ('pass', 'legitimate') THEN 1 ELSE 0 END) AS pass_count,
                 SUM(CASE WHEN LOWER(verdict) IN ('fail', 'softfail', 'none', 'neutral', 'spoofed', 'suspicious') THEN 1 ELSE 0 END) AS risky_count,
                 (
-                    SUM(CASE WHEN LOWER(verdict) IN ('spoofed', 'fail') THEN 3 ELSE 0 END) +
+                    SUM(CASE WHEN LOWER(verdict) IN ('fail', 'spoofed') THEN 3 ELSE 0 END) +
                     SUM(CASE WHEN LOWER(verdict) IN ('softfail', 'suspicious') THEN 2 ELSE 0 END) +
                     SUM(CASE WHEN LOWER(verdict) IN ('none', 'neutral') THEN 1 ELSE 0 END)
                 ) AS risk_score
@@ -966,6 +966,41 @@ def api_alerts():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/latest-scans")
+def api_latest_scans():
+    try:
+        rows = execute_query("""
+            SELECT timestamp, from_domain, verdict
+            FROM scans
+            ORDER BY timestamp DESC
+            LIMIT 10
+        """, fetchall=True)
+
+        data = []
+        for r in rows:
+            verdict = (r["verdict"] or "").lower()
+
+            if verdict in ("legitimate", "pass"):
+                severity = "low"
+                status = "legitimate"
+            elif verdict in ("suspicious", "softfail", "none", "neutral"):
+                severity = "medium"
+                status = "review"
+            else:
+                severity = "high"
+                status = "spoofed"
+
+            data.append({
+                "severity": severity,
+                "domain": r["from_domain"] or "N/A",
+                "title": f"Verdict: {r['verdict']}",
+                "detected": r["timestamp"].strftime("%Y-%m-%d %H:%M") if r["timestamp"] else "N/A",
+                "status": status
+            })
+
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 # =========================================================
 # EXPORT ROUTES
 # =========================================================
