@@ -10,7 +10,7 @@ async function fetchChartData(url) {
 
 // ===================== SEVERITY =====================
 async function loadSeverityChart() {
-    const data = await fetchChartData('/api/chart/classification');
+    const data = await fetchChartData('/api/chart/severity');
 
     new Chart(document.getElementById('severityChart'), {
         type: 'doughnut',

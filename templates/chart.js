@@ -16,7 +16,7 @@ let ipChartInstance = null;
 
 // ===================== SEVERITY CHART =====================
 async function loadSeverityChart() {
-    const data = await fetchChartData('/api/chart/classification');
+    const data = await fetchChartData('/api/chart/severity');
     const canvas = document.getElementById('severityChart');
     if (!canvas) return;
 
