@@ -775,18 +775,35 @@ def api_charts_timeline():
 
 @app.route("/api/recent-reports")
 def recent_reports():
-    reports = Report.query.order_by(Report.timestamp.desc()).limit(10).all()
+    try:
+        rows = execute_query("""
+            SELECT
+                from_domain AS domain,
+                MAX(timestamp) AS latest_time,
+                COUNT(*) AS records,
+                ROUND(
+                    100.0 * SUM(CASE WHEN LOWER(verdict) IN ('pass', 'legitimate') THEN 1 ELSE 0 END) / COUNT(*),
+                    2
+                ) AS pass_rate
+            FROM scans
+            WHERE from_domain IS NOT NULL AND TRIM(from_domain) != ''
+            GROUP BY from_domain
+            ORDER BY latest_time DESC
+            LIMIT 10
+        """, fetchall=True)
 
-    data = []
-    for r in reports:
-        data.append({
-            "domain": r.domain,
-            "date": r.timestamp.strftime("%Y-%m-%d %H:%M"),
-            "records": r.total_emails,
-            "pass_rate": r.pass_rate
-        })
+        data = []
+        for r in rows:
+            data.append({
+                "domain": r["domain"],
+                "date": r["latest_time"].strftime("%Y-%m-%d %H:%M") if r["latest_time"] else "N/A",
+                "records": r["records"] or 0,
+                "pass_rate": r["pass_rate"] or 0
+            })
 
-    return jsonify(data)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/reports")
@@ -828,12 +845,12 @@ def api_risky_domains():
             SELECT
                 from_domain AS domain,
                 COUNT(*) AS total,
-                SUM(CASE WHEN LOWER(verdict)='pass' THEN 1 ELSE 0 END) AS pass_count,
-                SUM(CASE WHEN LOWER(verdict) IN ('fail','softfail','none','neutral') THEN 1 ELSE 0 END) AS risky_count,
+                SUM(CASE WHEN LOWER(verdict) IN ('pass', 'legitimate') THEN 1 ELSE 0 END) AS pass_count,
+                SUM(CASE WHEN LOWER(verdict) IN ('fail', 'softfail', 'none', 'neutral', 'spoofed', 'suspicious') THEN 1 ELSE 0 END) AS risky_count,
                 (
-                    SUM(CASE WHEN LOWER(verdict)='fail' THEN 3 ELSE 0 END) +
-                    SUM(CASE WHEN LOWER(verdict)='softfail' THEN 2 ELSE 0 END) +
-                    SUM(CASE WHEN LOWER(verdict) IN ('none','neutral') THEN 1 ELSE 0 END)
+                    SUM(CASE WHEN LOWER(verdict) IN ('spoofed', 'fail') THEN 3 ELSE 0 END) +
+                    SUM(CASE WHEN LOWER(verdict) IN ('softfail', 'suspicious') THEN 2 ELSE 0 END) +
+                    SUM(CASE WHEN LOWER(verdict) IN ('none', 'neutral') THEN 1 ELSE 0 END)
                 ) AS risk_score
             FROM scans
             WHERE from_domain IS NOT NULL AND TRIM(from_domain) != ''
@@ -846,6 +863,7 @@ def api_risky_domains():
         for r in rows:
             total = r["total"] or 0
             pass_rate = round((r["pass_count"] or 0) * 100 / total, 2) if total else 0
+
             data.append({
                 "domain": r["domain"],
                 "total": total,
@@ -857,7 +875,6 @@ def api_risky_domains():
         return jsonify({"domains": data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/domains")
 def api_domains():
@@ -893,18 +910,27 @@ def api_alerts():
         rows = execute_query("""
             SELECT from_domain, verdict, timestamp
             FROM scans
-            WHERE LOWER(verdict) = 'fail'
+            WHERE LOWER(verdict) IN ('fail', 'softfail', 'none', 'neutral', 'spoofed', 'suspicious')
             ORDER BY timestamp DESC
             LIMIT 10
         """, fetchall=True)
 
         alerts = []
         for r in rows:
+            v = (r["verdict"] or "").lower()
+
+            if v in ("fail", "spoofed"):
+                severity = "high"
+            elif v in ("softfail", "suspicious"):
+                severity = "medium"
+            else:
+                severity = "low"
+
             alerts.append({
-                "severity": "high",
+                "severity": severity,
                 "domain": r["from_domain"],
                 "source_ip": "unknown",
-                "message": "DMARC failure detected",
+                "message": f"DMARC issue detected ({r['verdict']})",
                 "detected": r["timestamp"]
             })
 

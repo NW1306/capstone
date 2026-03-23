@@ -348,12 +348,7 @@ async function loadIncidents() {
                 <td>${i.title || 'N/A'}</td>
                 <td>${i.detected || 'N/A'}</td>
                 <td>${i.status || 'N/A'}</td>
-                <td>
-                    ${(i.status || '').toLowerCase() === 'resolved'
-                        ? '<span class="badge bg-success">Resolved</span>'
-                        : `<button class="btn btn-sm btn-warning" onclick="resolveIncident(${i.id})">Resolve</button>`
-                    }
-                </td>
+                
             </tr>
         `).join('');
     } catch (error) {
