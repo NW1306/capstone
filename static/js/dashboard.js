@@ -187,34 +187,34 @@ async function loadAlerts() {
 async function loadTimelineData() {
     try {
         const data = await fetchJson('/api/charts/timeline?days=30');
-        console.log('timeline data:', data);
+        console.log("RAW API:", data);
 
-        const timelineCanvas = document.getElementById('timelineChart');
+        const canvas = document.getElementById('timelineChart');
         const passRateCanvas = document.getElementById('passRateChart');
 
-        if (!timelineCanvas) {
-            console.error('timelineChart canvas not found');
+        if (!canvas) {
+            console.error("timelineChart canvas not found");
             return;
         }
 
         if (!Array.isArray(data) || data.length === 0) {
-            console.warn('No timeline data returned');
+            console.warn("No timeline data returned");
             return;
         }
 
-        const labels = data.map(item => item.date);
-        const values = data.map(item => Number(item.count || 0));
+        const labels = data.map(d => d.date);
+        const values = data.map(d => Number(d.count || 0));
 
         if (timelineChart) {
             timelineChart.destroy();
         }
 
-        timelineChart = new Chart(timelineCanvas.getContext('2d'), {
+        timelineChart = new Chart(canvas.getContext('2d'), {
             type: 'line',
             data: {
-                labels,
+                labels: labels,
                 datasets: [{
-                    label: 'DMARC Reports Over Time',
+                    label: 'DMARC Activity',
                     data: values,
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
@@ -226,16 +226,8 @@ async function loadTimelineData() {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    }
-                },
                 scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
@@ -260,17 +252,14 @@ async function loadTimelineData() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
+                    animation: false
                 }
             });
         }
-    } catch (error) {
-        console.error('Error loading timeline data:', error);
+
+        console.log("CHART CREATED SUCCESSFULLY");
+    } catch (err) {
+        console.error("CHART ERROR:", err);
     }
 }
 
