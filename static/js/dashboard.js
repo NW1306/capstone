@@ -295,7 +295,7 @@ async function loadRiskyDomains() {
 
 async function loadRecentReports() {
     try {
-        const data = await fetchJson('/api/reports?page=1&per_page=5');
+        const data = await fetchJson('/api/reports?page=1&per_page=10');
         const tbody = document.getElementById('recent-reports-table');
         if (!tbody) return;
 
