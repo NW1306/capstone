@@ -72,25 +72,25 @@ async function loadSummaryStats() {
             summary.innerHTML = `
                 <div class="col-md-3">
                     <div class="stat-card">
-                        <h6><i class="bi bi-globe"></i> Domains</h6>
+                        <h6>Domains</h6>
                         <h2>${data.total_domains || 0}</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
-                        <h6><i class="bi bi-file-text"></i> Reports</h6>
+                        <h6> Reports</h6>
                         <h2>${data.total_reports || 0}</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
-                        <h6><i class="bi bi-envelope"></i> Emails</h6>
+                        <h6> Emails</h6>
                         <h2>${data.total_emails || 0}</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
-                        <h6><i class="bi bi-exclamation-triangle"></i> Active Alerts</h6>
+                        <h6>Active Alerts</h6>
                         <h2>${data.active_alerts || 0}</h2>
                     </div>
                 </div>
