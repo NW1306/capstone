@@ -1,1 +1,2 @@
 # DMARC
+#SPF authentication

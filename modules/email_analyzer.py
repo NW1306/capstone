@@ -8,44 +8,46 @@ import traceback
 def extract_headers(msg):
     """Extract From domain, Return-Path, and sending IP from email message."""
     try:
-        # Get From address
-        from_hdr = msg.get('From', '')
-        print(f"From header: {from_hdr}")
-        
-        # Extract email from From field
-        from_match = re.search(r'<(.+@.+)>', from_hdr) 
-        if not from_match:
-            from_match = re.search(r'([\w\.-]+@[\w\.-]+)', from_hdr)
-        
-        from_addr = from_match.group(1) if from_match else from_hdr
-        from_domain = from_addr.split('@')[-1] if '@' in from_addr else None
+        from email.utils import parseaddr
+
+        print("Available headers:", list(msg.keys()))
+
+        # Try multiple sender-related headers
+        from_hdr = msg.get('From') or msg.get('Sender') or msg.get('Reply-To') or ''
+        print(f"Raw From/Sender header: {from_hdr}")
+
+        name, from_addr = parseaddr(from_hdr)
+        print(f"Parsed address: {from_addr}")
+
+        from_domain = from_addr.split('@')[-1].lower() if '@' in from_addr else None
         print(f"From domain: {from_domain}")
 
-        # Get Return-Path
+        # Return-Path
         return_path = msg.get('Return-Path', '')
         if return_path.startswith('<') and return_path.endswith('>'):
             return_path = return_path[1:-1]
-        return_path_domain = return_path.split('@')[-1] if '@' in return_path else from_domain
+
+        _, return_addr = parseaddr(return_path)
+        return_path_domain = return_addr.split('@')[-1].lower() if '@' in return_addr else from_domain
         print(f"Return-Path domain: {return_path_domain}")
 
-        # Get sending IP from Received headers
+        # Sending IP from Received
         received = msg.get_all('Received', [])
         ip = None
         ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-        
+
         for rec in received:
-            print(f"Received header: {rec[:100]}...")  # Print first 100 chars
             ips = re.findall(ip_pattern, rec)
             if ips:
                 ip = ips[0]
                 print(f"Found IP: {ip}")
                 break
-        
+
         if not ip:
             print("No IP found in Received headers")
-            
+
         return from_domain, return_path_domain, ip
-        
+
     except Exception as e:
         print(f"Error in extract_headers: {e}")
         traceback.print_exc()
@@ -132,6 +134,7 @@ def parse_dmarc(record):
         print(f"Error parsing DMARC: {e}")
         return {}
 
+
 def verify_dkim(msg_bytes):
     """Verify DKIM signature using dkimpy."""
     try:
@@ -189,17 +192,26 @@ def analyze_email(file_bytes):
         print("=" * 50)
         print("Starting email analysis")
         print("=" * 50)
-        
-        # Parse email
+
+        # Parse email first
         msg = BytesParser(policy=policy.default).parsebytes(file_bytes)
         print("Email parsed successfully")
+
+        print("Parsed Subject:", msg.get("Subject"))
+        print("Parsed From:", msg.get("From"))
+        print("Parsed Sender:", msg.get("Sender"))
+        print("Parsed Reply-To:", msg.get("Reply-To"))
+        print("Available headers:", list(msg.keys()))
+
         
+        print(file_bytes[:500].decode(errors="ignore"))
+
         # Extract headers
         from_domain, return_path_domain, sending_ip = extract_headers(msg)
-        
+
         if not from_domain:
-            return {"error": "Could not determine From domain."}
-        
+            return {"error": "The uploaded email file does not contain a valid sender header (From). Please upload a complete raw .eml file."}
+
         print(f"Analysis target: From={from_domain}, Return-Path={return_path_domain}, IP={sending_ip}")
 
         # SPF
@@ -220,6 +232,8 @@ def analyze_email(file_bytes):
         verdict, reason = classify(spf_pass, dkim_pass, spf_aligned, dkim_aligned, dmarc_policy)
 
         result = {
+            "subject": msg.get("Subject"),
+            "from_header": msg.get("From"),
             "from_domain": from_domain,
             "return_path_domain": return_path_domain,
             "sending_ip": sending_ip,
@@ -234,14 +248,14 @@ def analyze_email(file_bytes):
             "verdict": verdict,
             "reason": reason
         }
-        
+
         print("=" * 50)
         print("Analysis complete")
         print(f"Verdict: {verdict}")
         print("=" * 50)
-        
+
         return result
-        
+
     except Exception as e:
         print(f"Error in analyze_email: {e}")
         traceback.print_exc()
